@@ -1,0 +1,15 @@
+[Unit]
+Description=Predator Orion LED control: load predator_wmi, grant group access, LEDs off at boot
+After=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=/usr/sbin/modprobe predator_wmi
+ExecStartPre=/usr/bin/chgrp predator-led /sys/kernel/predator_wmi/call
+ExecStartPre=/usr/bin/chmod 0660 /sys/kernel/predator_wmi/call
+# LEDs off until you log in; the tray app then restores your saved settings
+ExecStart=/usr/bin/predator-led off
+
+[Install]
+WantedBy=multi-user.target

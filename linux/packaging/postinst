@@ -1,0 +1,37 @@
+#!/bin/sh
+set -e
+PKG=predator-wmi
+VER=@VERSION@
+
+if [ "$1" = configure ]; then
+    addgroup --system predator-led >/dev/null 2>&1 || true
+
+    # add the user who ran "sudo apt/dpkg install" to the group
+    if [ -n "$SUDO_USER" ] && [ "$SUDO_USER" != root ]; then
+        if ! id -nG "$SUDO_USER" | grep -qw predator-led; then
+            usermod -aG predator-led "$SUDO_USER"
+            echo "predator-led: added $SUDO_USER to group predator-led - log out and back in once."
+        fi
+    else
+        echo "predator-led: add your user to the group: sudo usermod -aG predator-led <user>"
+    fi
+
+    # build + install the module for every installed kernel (and register for future ones)
+    if ! dkms status -m $PKG -v $VER | grep -q .; then
+        dkms add -m $PKG -v $VER
+    fi
+    for k in /lib/modules/*/build; do
+        kver=$(basename "$(dirname "$k")")
+        [ -d "$k" ] || continue
+        dkms build -m $PKG -v $VER -k "$kver" && dkms install -m $PKG -v $VER -k "$kver" --force || \
+            echo "predator-led: module build failed for kernel $kver (headers missing?)"
+    done
+
+    if [ -d /run/systemd/system ]; then
+        systemctl daemon-reload
+        systemctl enable predator-led.service >/dev/null
+        rmmod predator_wmi 2>/dev/null || true   # make sure the freshly built module is used
+        systemctl restart predator-led.service || true
+    fi
+fi
+exit 0

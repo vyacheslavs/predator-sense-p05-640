@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Predator LEDs
+Comment=Control Predator Orion case and fan lighting
+Exec=/usr/bin/predator-led-tray
+Icon=preferences-desktop-display
+Categories=Settings;HardwareSettings;
+X-GNOME-Autostart-enabled=true

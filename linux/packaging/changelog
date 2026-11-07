@@ -1,0 +1,5 @@
+predator-led (1.0.0) unstable; urgency=medium
+
+  * Initial package: predator_wmi DKMS module, predator-led CLI, tray app.
+
+ -- slavs <kamo.dev@gmail.com>  Sat, 07 Nov 2026 06:30:00 +0000

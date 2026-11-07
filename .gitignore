@@ -1,0 +1,24 @@
+# Acer PredatorSense installer and binaries (proprietary, ~500 MB) - analysis input only
+/PredatorSense_Acer_*/
+/PredatorSense Service/
+/*.zip
+
+# raw BIOS/ACPI dumps from the local machine
+/linux/fw-dump/
+
+# kernel module build output
+*.o
+*.ko
+*.mod
+*.mod.c
+*.cmd
+.*.cmd
+Module.symvers
+modules.order
+.module-common.o
+.tmp_versions/
+
+# packages
+/linux/dist/
+
+__pycache__/

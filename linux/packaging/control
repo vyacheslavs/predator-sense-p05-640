@@ -1,0 +1,13 @@
+Package: predator-led
+Version: @VERSION@
+Section: utils
+Priority: optional
+Architecture: all
+Depends: dkms, python3, python3-gi, gir1.2-gtk-3.0, gir1.2-ayatanaappindicator3-0.1, systemd
+Maintainer: slavs <kamo.dev@gmail.com>
+Description: LED control for Acer Predator Orion PO5-640 desktops
+ Controls the case/fan/motherboard RGB lighting of the Predator Orion PO5-640
+ through the BIOS AcerGamingFunction WMI interface (what PredatorSense does on
+ Windows). Contains the predator_wmi kernel module (built with DKMS, rebuilt
+ automatically on kernel upgrades), the predator-led command line tool and a
+ system tray application.
