@@ -1,0 +1,86 @@
+name: Build deb
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # Ubuntu 24.04 = same base as Linux Mint 22
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: linux
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential "linux-headers-$(uname -r)" lintian python3
+
+      - name: Compile kernel module (DKMS-equivalent build)
+        run: |
+          make
+          modinfo predator_wmi.ko | grep -E '^(description|parm|vermagic):'
+
+      - name: Check Python sources
+        run: python3 -m py_compile predator_led.py predator_led_tray.py
+
+      - name: Determine package version
+        id: ver
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            v="${GITHUB_REF_NAME#v}"
+          else
+            v="1.0.0+git$(date -u +%Y%m%d).$(git rev-parse --short HEAD)"
+          fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "Package version: $v"
+
+      - name: Build deb
+        run: VERSION="${{ steps.ver.outputs.version }}" ./build-deb.sh
+
+      - name: Lintian
+        run: |
+          lintian --fail-on error --suppress-tags maintainer-script-calls-systemctl,no-manual-page \
+            dist/*.deb
+
+      - name: Show package contents
+        run: |
+          dpkg-deb -I dist/*.deb
+          dpkg-deb -c dist/*.deb
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: predator-led-deb
+          path: linux/dist/*.deb
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: predator-led-deb
+          path: dist
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.deb \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "predator-led $GITHUB_REF_NAME" \
+            --notes "Install: \`sudo apt install ./$(basename dist/*.deb)\`, then log out and back in once."
